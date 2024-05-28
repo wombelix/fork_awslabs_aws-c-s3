@@ -53,7 +53,7 @@ struct aws_s3_meta_request_work {
 static const enum aws_log_level s_log_level_client_stats = AWS_LL_INFO;
 
 /* max-requests-in-flight = ideal-num-connections * s_max_requests_multiplier */
-static const uint32_t s_max_requests_multiplier = 4*2;
+static const uint32_t s_max_requests_multiplier = 4;
 
 /* This is used to determine the ideal number of HTTP connections. Algorithm is roughly:
  * num-connections-max = throughput-target-gbps / s_throughput_per_connection_gbps
@@ -540,7 +540,7 @@ struct aws_s3_client *aws_s3_client_new(
     {
         double ideal_connection_count_double = client->throughput_target_gbps / s_throughput_per_connection_gbps;
         /* round up and clamp */
-        ideal_connection_count_double = ceil(ideal_connection_count_double);
+        ideal_connection_count_double = ceil(ideal_connection_count_double) * 2;
         ideal_connection_count_double = aws_max_double(g_min_num_connections, ideal_connection_count_double);
         ideal_connection_count_double = aws_min_double(UINT32_MAX, ideal_connection_count_double);
         *(uint32_t *)&client->ideal_connection_count = (uint32_t)ideal_connection_count_double;
