@@ -24,6 +24,7 @@
 #include <aws/common/json.h>
 #include <aws/common/string.h>
 #include <aws/common/system_info.h>
+#include <aws/common/environment.h>
 #include <aws/http/connection.h>
 #include <aws/http/connection_manager.h>
 #include <aws/http/proxy.h>
@@ -52,7 +53,7 @@ struct aws_s3_meta_request_work {
 static const enum aws_log_level s_log_level_client_stats = AWS_LL_INFO;
 
 /* max-requests-in-flight = ideal-num-connections * s_max_requests_multiplier */
-static const uint32_t s_max_requests_multiplier = 4;
+static const uint32_t s_max_requests_multiplier = 4*2;
 
 /* This is used to determine the ideal number of HTTP connections. Algorithm is roughly:
  * num-connections-max = throughput-target-gbps / s_throughput_per_connection_gbps
@@ -66,7 +67,7 @@ static const uint32_t s_max_requests_multiplier = 4;
 static const double s_throughput_per_connection_gbps = 100.0 / 250;
 
 /* After throughput math, clamp the min/max number of connections */
-const uint32_t g_min_num_connections = 10; /* Magic value based on: 10 was old behavior */
+const uint32_t g_min_num_connections = 20; /* Magic value based on: 10 was old behavior */
 
 /**
  * Default part size is 8 MiB to reach the best performance from the experiments we had.
@@ -318,7 +319,7 @@ struct aws_s3_client *aws_s3_client_new(
         }
 #else
         if (client_config->throughput_target_gbps > 75.0) {
-            mem_limit = GB_TO_BYTES(8);
+            mem_limit = GB_TO_BYTES(16);
         } else if (client_config->throughput_target_gbps > 25.0) {
             mem_limit = GB_TO_BYTES(4);
         } else {
@@ -503,9 +504,21 @@ struct aws_s3_client *aws_s3_client_new(
             .shutdown_callback_user_data = client,
         };
 
-        client->body_streaming_elg = aws_event_loop_group_new_default(
-            client->allocator, num_streaming_threads, &body_streaming_elg_shutdown_options);
-
+         client->body_streaming_elg = aws_event_loop_group_new_default(
+             client->allocator, num_streaming_threads, &body_streaming_elg_shutdown_options);
+        
+//        struct aws_string *env_name = aws_string_new_from_c_str(client->allocator, "WAQAR_NUMA_NODE");
+//        struct aws_string *env_value;
+//        aws_get_environment_value(client->allocator, env_name, &env_value);
+//        if(env_value != NULL && env_value->len > 0){
+//            client->body_streaming_elg = aws_event_loop_group_new_default_pinned_to_cpu_group(
+//                    client->allocator, num_streaming_threads, 1, &body_streaming_elg_shutdown_options);
+//        }else {
+//            client->body_streaming_elg = aws_event_loop_group_new_default_pinned_to_cpu_group(
+//                    client->allocator, num_streaming_threads, 0, &body_streaming_elg_shutdown_options);
+//        }
+//        aws_string_destroy(env_name);
+//        aws_string_destroy(env_value);
         if (!client->body_streaming_elg) {
             /* Fail to create elg, we should fail the call */
             goto on_error;
