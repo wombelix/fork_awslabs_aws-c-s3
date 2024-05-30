@@ -67,7 +67,7 @@ static const uint32_t s_max_requests_multiplier = 4;
 static const double s_throughput_per_connection_gbps = 100.0 / 250;
 
 /* After throughput math, clamp the min/max number of connections */
-const uint32_t g_min_num_connections = 20; /* Magic value based on: 10 was old behavior */
+const uint32_t g_min_num_connections = 10; /* Magic value based on: 10 was old behavior */
 
 /**
  * Default part size is 8 MiB to reach the best performance from the experiments we had.
@@ -540,7 +540,7 @@ struct aws_s3_client *aws_s3_client_new(
     {
         double ideal_connection_count_double = client->throughput_target_gbps / s_throughput_per_connection_gbps;
         /* round up and clamp */
-        ideal_connection_count_double = ceil(ideal_connection_count_double) * 2;
+        ideal_connection_count_double = ceil(ideal_connection_count_double);
         ideal_connection_count_double = aws_max_double(g_min_num_connections, ideal_connection_count_double);
         ideal_connection_count_double = aws_min_double(UINT32_MAX, ideal_connection_count_double);
         *(uint32_t *)&client->ideal_connection_count = (uint32_t)ideal_connection_count_double;
