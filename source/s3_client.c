@@ -161,14 +161,14 @@ uint32_t aws_s3_client_get_max_active_connections(
     AWS_PRECONDITION(client);
     (void)meta_request;
 
-    uint32_t max_active_connections = client->ideal_connection_count;
+//    uint32_t max_active_connections = client->ideal_connection_count;
+//
+//    if (client->max_active_connections_override > 0 &&
+//        client->max_active_connections_override < max_active_connections) {
+//        max_active_connections = client->max_active_connections_override;
+//    }
 
-    if (client->max_active_connections_override > 0 &&
-        client->max_active_connections_override < max_active_connections) {
-        max_active_connections = client->max_active_connections_override;
-    }
-
-    return max_active_connections;
+    return client->max_active_connections_override;
 }
 
 /* Returns the max number of requests allowed to be in memory */
@@ -310,30 +310,31 @@ struct aws_s3_client *aws_s3_client_new(
     client->allocator = allocator;
 
     size_t mem_limit = 0;
-    if (client_config->memory_limit_in_bytes == 0) {
-#if SIZE_BITS == 32
-        if (client_config->throughput_target_gbps > 25.0) {
-            mem_limit = GB_TO_BYTES(2);
-        } else {
-            mem_limit = GB_TO_BYTES(1);
-        }
-#else
-        if (client_config->throughput_target_gbps > 75.0) {
-            mem_limit = GB_TO_BYTES(8);
-        } else if (client_config->throughput_target_gbps > 25.0) {
-            mem_limit = GB_TO_BYTES(4);
-        } else {
-            mem_limit = GB_TO_BYTES(2);
-        }
-#endif
-    } else {
-        // cap memory limit to SIZE_MAX
-        if (client_config->memory_limit_in_bytes > SIZE_MAX) {
-            mem_limit = SIZE_MAX;
-        } else {
-            mem_limit = (size_t)client_config->memory_limit_in_bytes;
-        }
-    }
+    mem_limit = SIZE_MAX;
+//    if (client_config->memory_limit_in_bytes == 0) {
+//#if SIZE_BITS == 32
+//        if (client_config->throughput_target_gbps > 25.0) {
+//            mem_limit = GB_TO_BYTES(2);
+//        } else {
+//            mem_limit = GB_TO_BYTES(1);
+//        }
+//#else
+//        if (client_config->throughput_target_gbps > 75.0) {
+//            mem_limit = GB_TO_BYTES(8);
+//        } else if (client_config->throughput_target_gbps > 25.0) {
+//            mem_limit = GB_TO_BYTES(4);
+//        } else {
+//            mem_limit = GB_TO_BYTES(2);
+//        }
+//#endif
+//    } else {
+//        // cap memory limit to SIZE_MAX
+//        if (client_config->memory_limit_in_bytes > SIZE_MAX) {
+//            mem_limit = SIZE_MAX;
+//        } else {
+//            mem_limit = (size_t)client_config->memory_limit_in_bytes;
+//        }
+//    }
 
     size_t part_size = s_default_part_size;
     if (client_config->part_size != 0) {
