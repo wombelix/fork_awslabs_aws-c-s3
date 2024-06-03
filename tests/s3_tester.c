@@ -389,7 +389,6 @@ int aws_s3_tester_init(struct aws_allocator *allocator, struct aws_s3_tester *te
             aws_byte_cursor_from_string(tester->s3express_bucket_use1_az4_endpoint);
     }
 
-    aws_s3_library_init(allocator);
 
     if (aws_mutex_init(&tester->synced_data.lock)) {
         return AWS_OP_ERR;
@@ -750,7 +749,7 @@ void aws_s3_tester_clean_up(struct aws_s3_tester *tester) {
     aws_event_loop_group_release(tester->el_group);
     tester->el_group = NULL;
 
-    aws_s3_library_clean_up();
+    // aws_s3_library_clean_up();
 
     aws_condition_variable_clean_up(&tester->signal);
     aws_mutex_clean_up(&tester->synced_data.lock);

@@ -1020,8 +1020,8 @@ static int s_test_s3_get_object_helper(
     struct aws_byte_cursor s3_path) {
     struct aws_s3_tester tester;
     AWS_ZERO_STRUCT(tester);
-    ASSERT_SUCCESS(aws_s3_tester_init(allocator, &tester));
 
+    ASSERT_SUCCESS(aws_s3_tester_init(allocator, &tester));
     struct aws_s3_client_config client_config = {
         .part_size = 64 * 1024,
     };
@@ -1087,12 +1087,25 @@ static int s_test_s3_get_object_tls_disabled(struct aws_allocator *allocator, vo
     return 0;
 }
 
+static void main_thread_fn(void *arg) {
+    struct aws_allocator *alloc = arg;
+    aws_s3_library_init(alloc);
+    s_test_s3_get_object_helper(alloc, AWS_S3_TLS_ENABLED, 0, g_pre_existing_object_1MB);
+}
+
 AWS_TEST_CASE(test_s3_get_object_tls_enabled, s_test_s3_get_object_tls_enabled)
 static int s_test_s3_get_object_tls_enabled(struct aws_allocator *allocator, void *ctx) {
     (void)ctx;
 
-    ASSERT_SUCCESS(s_test_s3_get_object_helper(allocator, AWS_S3_TLS_ENABLED, 0, g_pre_existing_object_1MB));
+    struct aws_thread main_thread;
+    aws_thread_init(&main_thread, allocator);
 
+    aws_thread_launch(&main_thread, main_thread_fn, allocator, NULL);
+    aws_thread_join(&main_thread);
+    aws_thread_clean_up(&main_thread);
+    while(true){
+        ASSERT_SUCCESS(s_test_s3_get_object_helper(allocator, AWS_S3_TLS_ENABLED, 0, g_pre_existing_object_1MB));
+    }
     return 0;
 }
 
