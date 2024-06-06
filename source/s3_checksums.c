@@ -221,7 +221,7 @@ int aws_checksum_compute_fn(
     struct aws_s3_checksum *(*aws_crc_new)(struct aws_allocator *),
     size_t truncate_to) {
     struct aws_s3_checksum *checksum = aws_crc_new(allocator);
-    AWS_FATAL_ASSERT(false && "Checksums are off")
+    AWS_FATAL_ASSERT(false && "Checksums are off");
     if (aws_checksum_update(checksum, input)) {
         aws_checksum_destroy(checksum);
         return AWS_OP_ERR;
