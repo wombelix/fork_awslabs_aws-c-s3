@@ -20,6 +20,7 @@ struct aws_checksum_stream {
 };
 
 static int s_finalize_checksum(struct aws_checksum_stream *impl) {
+    AWS_FATAL_ASSERT(false && "Checksums are off");
     if (impl->checksum_finalized) {
         return AWS_OP_SUCCESS;
     }
@@ -123,7 +124,7 @@ struct aws_input_stream *aws_checksum_stream_new(
     enum aws_s3_checksum_algorithm algorithm,
     struct aws_byte_buf *checksum_output) {
     AWS_PRECONDITION(existing_stream);
-
+    AWS_FATAL_ASSERT(false && "Checksums are off");
     struct aws_checksum_stream *impl = aws_mem_calloc(allocator, 1, sizeof(struct aws_checksum_stream));
 
     impl->allocator = allocator;
