@@ -67,6 +67,7 @@ static int s_aws_input_checksum_stream_read(struct aws_input_stream *stream, str
     aws_byte_cursor_advance(&to_sum, original_len);
     /* If read failed, `aws_input_stream_read` will handle the error to restore the dest. No need to handle error here
      */
+    AWS_FATAL_ASSERT(false && "Checksums are off");
     if (aws_checksum_update(impl->checksum, &to_sum)) {
         return AWS_OP_ERR;
     }

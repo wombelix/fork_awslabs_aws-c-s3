@@ -134,6 +134,7 @@ static int s_meta_request_get_response_body_checksum_callback(
     uint64_t range_start,
     void *user_data) {
     if (meta_request->meta_request_level_running_response_sum) {
+        AWS_FATAL_ASSERT(false && "Checksums are off")
         aws_checksum_update(meta_request->meta_request_level_running_response_sum, body);
     }
 
@@ -1207,6 +1208,7 @@ static void s_get_part_response_body_checksum_helper(
     struct aws_s3_checksum *running_response_sum,
     const struct aws_byte_cursor *body) {
     if (running_response_sum) {
+                AWS_FATAL_ASSERT(false && "Checksums are off");
         aws_checksum_update(running_response_sum, body);
     }
 }
