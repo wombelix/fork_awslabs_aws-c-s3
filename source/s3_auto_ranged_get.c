@@ -35,7 +35,7 @@ static void s_s3_auto_ranged_get_request_finished(
 
 static struct aws_s3_meta_request_vtable s_s3_auto_ranged_get_vtable = {
     .update = s_s3_auto_ranged_get_update,
-    .send_request_finish = aws_s3_meta_request_send_request_finish_default,
+    .send_request_finish = s_s3_auto_ranged_get_send_request_finish,
     .prepare_request = s_s3_auto_ranged_get_prepare_request,
     .init_signing_date_time = aws_s3_meta_request_init_signing_date_time_default,
     .sign_request = aws_s3_meta_request_sign_request_default,
@@ -43,6 +43,18 @@ static struct aws_s3_meta_request_vtable s_s3_auto_ranged_get_vtable = {
     .destroy = s_s3_meta_request_auto_ranged_get_destroy,
     .finish = aws_s3_meta_request_finish_default,
 };
+
+static void s_s3_auto_ranged_get_send_request_finish(
+    struct aws_s3_connection *connection,
+    struct aws_http_stream *stream,
+    int error_code) {
+    struct aws_s3_request *request = connection->request;
+    if (request->request_tag == AWS_S3_AUTO_RANGE_GET_REQUEST_TYPE_GET_OBJECT_WITH_RANGE) {
+            /* TODO: the single part upload may also be improved from a timeout as multipart. */
+        aws_s3_client_update_upload_part_timeout(request->meta_request->client, request, error_code);
+    }
+    aws_s3_meta_request_send_request_finish_default(connection, stream, error_code);
+}
 
 static int s_s3_auto_ranged_get_success_status(struct aws_s3_meta_request *meta_request) {
     AWS_PRECONDITION(meta_request);
