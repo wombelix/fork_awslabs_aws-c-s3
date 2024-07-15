@@ -33,6 +33,10 @@ static void s_s3_auto_ranged_get_request_finished(
     struct aws_s3_request *request,
     int error_code);
 
+static void s_s3_auto_ranged_get_send_request_finish(
+    struct aws_s3_connection *connection,
+    struct aws_http_stream *stream,
+    int error_code);
 static struct aws_s3_meta_request_vtable s_s3_auto_ranged_get_vtable = {
     .update = s_s3_auto_ranged_get_update,
     .send_request_finish = s_s3_auto_ranged_get_send_request_finish,
