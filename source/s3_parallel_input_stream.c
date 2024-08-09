@@ -6,10 +6,12 @@
 #include "aws/s3/private/s3_parallel_input_stream.h"
 
 #include <aws/common/file.h>
+#include <aws/common/clock.h>
 
 #include <aws/io/future.h>
 #include <aws/io/stream.h>
 
+#include <inttypes.h>
 #include <errno.h>
 
 void aws_parallel_input_stream_init_base(
@@ -80,7 +82,9 @@ struct aws_future_bool *s_para_from_file_read(
         .is_end_of_stream = false,
         .is_valid = true,
     };
-
+    uint64_t start;
+    if (aws_high_res_clock_get_ticks(&start)) {
+    }
     file_stream = aws_input_stream_new_from_file(stream->alloc, aws_string_c_str(impl->file_path));
     if (!file_stream) {
         goto done;
@@ -104,6 +108,14 @@ struct aws_future_bool *s_para_from_file_read(
     }
     success = true;
 done:
+    uint64_t end;
+    if (aws_high_res_clock_get_ticks(&end)) {
+    }
+    uint64_t nanos = 0;
+    if (aws_sub_u64_checked(end, start, &nanos)) {
+    }
+    uint64_t milis = aws_timestamp_convert(nanos, AWS_TIMESTAMP_NANOS, AWS_TIMESTAMP_MILLIS, NULL);
+    AWS_LOGF_ERROR(AWS_LS_S3_META_REQUEST, "waahm7: %" PRIu64 "\n", milis);
     if (success) {
         aws_future_bool_set_result(future, status.is_end_of_stream);
     } else {
