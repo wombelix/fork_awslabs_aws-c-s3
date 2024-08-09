@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0.
  */
 
+#define _GNU_SOURCE
 #include "aws/s3/private/s3_parallel_input_stream.h"
 
 #include <aws/common/file.h>
@@ -150,7 +151,7 @@ struct aws_parallel_input_stream *aws_parallel_input_stream_new_from_file(
         aws_mem_calloc(allocator, 1, sizeof(struct aws_parallel_input_stream_from_file_impl));
     aws_parallel_input_stream_init_base(&impl->base, allocator, &s_parallel_input_stream_from_file_vtable, impl);
     impl->file_path = aws_string_new_from_cursor(allocator, &file_name);
-    impl->fd = open(file_name.ptr, O_RDONLY);
+    impl->fd = open(file_name.ptr, O_RDONLY | O_DIRECT);
     if (!aws_path_exists(impl->file_path)) {
         /* If file path not exists, raise error from errno. */
         aws_translate_and_raise_io_error(errno);
