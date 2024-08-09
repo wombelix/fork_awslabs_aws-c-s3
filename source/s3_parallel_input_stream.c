@@ -13,6 +13,8 @@
 
 #include <inttypes.h>
 #include <errno.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
 
 void aws_parallel_input_stream_init_base(
     struct aws_parallel_input_stream *stream,
@@ -59,6 +61,7 @@ struct aws_parallel_input_stream_from_file_impl {
     struct aws_parallel_input_stream base;
 
     struct aws_string *file_path;
+    int fd;
 };
 
 static void s_para_from_file_destroy(struct aws_parallel_input_stream *stream) {
@@ -85,29 +88,35 @@ struct aws_future_bool *s_para_from_file_read(
     uint64_t start;
     if (aws_high_res_clock_get_ticks(&start)) {
     }
-    file_stream = aws_input_stream_new_from_file(stream->alloc, aws_string_c_str(impl->file_path));
+    //file_stream = aws_input_stream_new_from_file(stream->alloc, aws_string_c_str(impl->file_path));
     if (!file_stream) {
         goto done;
     }
 
-    if (aws_input_stream_seek(file_stream, offset, AWS_SSB_BEGIN)) {
-        goto done;
-    }
+//    if (aws_input_stream_seek(file_stream, offset, AWS_SSB_BEGIN)) {
+//        goto done;
+//    }
     /* Keep reading until fill the buffer.
      * Note that we must read() after seek() to determine if we're EOF, the seek alone won't trigger it. */
-    while ((dest->len < dest->capacity) && !status.is_end_of_stream) {
-        /* Read from stream */
-        if (aws_input_stream_read(file_stream, dest) != AWS_OP_SUCCESS) {
-            goto done;
-        }
-
-        /* Check if stream is done */
-        if (aws_input_stream_get_status(file_stream, &status) != AWS_OP_SUCCESS) {
-            goto done;
-        }
+    ssize_t bytes_read = pread(impl->fd, dest->buffer+dest->len, dest->capacity, (off_t) offset);
+    if(bytes_read<0) {
+        goto done;
     }
+//    while ((dest->len < dest->capacity) && !status.is_end_of_stream) {
+//        /* Read from stream */
+//
+//        if (aws_input_stream_read(file_stream, dest) != AWS_OP_SUCCESS) {
+//            goto done;
+//        }
+//
+//        /* Check if stream is done */
+//        if (aws_input_stream_get_status(file_stream, &status) != AWS_OP_SUCCESS) {
+//            goto done;
+//        }
+//    }
     success = true;
 done:
+    ;
     uint64_t end;
     if (aws_high_res_clock_get_ticks(&end)) {
     }
@@ -140,6 +149,7 @@ struct aws_parallel_input_stream *aws_parallel_input_stream_new_from_file(
         aws_mem_calloc(allocator, 1, sizeof(struct aws_parallel_input_stream_from_file_impl));
     aws_parallel_input_stream_init_base(&impl->base, allocator, &s_parallel_input_stream_from_file_vtable, impl);
     impl->file_path = aws_string_new_from_cursor(allocator, &file_name);
+    impl->fd = open(file_name.ptr, O_RDONLY | O_DIRECT);
     if (!aws_path_exists(impl->file_path)) {
         /* If file path not exists, raise error from errno. */
         aws_translate_and_raise_io_error(errno);
